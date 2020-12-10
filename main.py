@@ -1,5 +1,7 @@
 from flask import Flask, json, request
 from pymongo import MongoClient
+from datetime import datetime
+
 
 USER = "grupo32"
 PASS = "grupo32"
@@ -206,6 +208,36 @@ def delete_mensaje(mid):
     mensajes.remove({"mid": mid})
     return json.jsonify({"success": True})
 
+
+@app.route("/lista", methods=['POST'])
+def date_filter():
+    get_json = request.get_json()
+    mid = get_json['id']
+
+    if get_json['fecha_inicio'] == "":
+        fecha_inicio = datetime.strptime('0001-01-01', '%Y-%m-%d')
+    
+    else:
+        fecha_inicio = datetime.strptime(get_json['fecha_inicio'], '%Y-%m-%d')
+
+    if get_json['fecha_fin'] == "":
+        fecha_fin = datetime.strptime('5000-01-01', '%Y-%m-%d')
+    
+    else:
+        fecha_fin = datetime.strptime(get_json['fecha_fin'], '%Y-%m-%d')
+
+
+    message = list(mensajes.find({"mid": mid}, {"_id": 0}))[0]
+    date = datetime.strptime(message['date'], '%Y-%m-%d')
+
+    if fecha_inicio <= date and fecha_fin >= date:
+        lat = message['lat']
+        lon = message['long']
+        return json.jsonify({'lat': lat, 'long': lon})
+
+    else:
+        return json.jsonify({"success": False, 'message': f"Mensaje con mid: {mid} fuera del rango de fechas"})
+    
 
 if __name__ == '__main__':
     app.run(threaded=True, port=5000)
